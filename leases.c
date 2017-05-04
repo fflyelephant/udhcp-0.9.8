@@ -173,7 +173,11 @@ int check_ip(u_int32_t addr)
 		temp.s_addr = addr;
 	 	LOG(LOG_INFO, "%s belongs to someone, reserving it for %ld seconds", 
 	 		inet_ntoa(temp), server_config.conflict_time);
-	 	/* blank_chaddr 黑户? 因为不知道使用这个IP的主机的MAC地址 */
+	 	/* 
+	 		blank_chaddr 黑户? 因为不知道使用这个IP的主机的MAC地址 
+			如果有主机回应arp,完全可以获得IP所对应的MAC地址，这里应该是不关心这个MAC了，所以
+			MAC全部记为0
+	 	*/
 		add_lease(blank_chaddr, addr, server_config.conflict_time);
 		return 1;
 	} else return 0;
