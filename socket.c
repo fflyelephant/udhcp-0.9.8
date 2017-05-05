@@ -102,17 +102,20 @@ int listen_socket(unsigned int ip, int port, char *inf)
 		此套接字是IPPROTO_UDP类型，所以收到的包的内容就是UDP头部(不包含)以后的数据(也就是DHCP报文的内容)，在发送时
 		也只需要封装DHCP报文进行发送(传输层及以下的部分都是内核来做封装)
 	*/
-	if ((fd = socket(PF_INET, SOCK_DGRAM, IPPROTO_UDP)) < 0) {
+	if ((fd = socket(PF_INET, SOCK_DGRAM, IPPROTO_UDP)) < 0) {//PF --> protocol family
 		DEBUG(LOG_ERR, "socket call failed: %s", strerror(errno));
 		return -1;
 	}
 	
 	memset(&addr, 0, sizeof(addr));
-	addr.sin_family = AF_INET;
+	addr.sin_family = AF_INET;//AF --> Address family
 	addr.sin_port = htons(port);
 	addr.sin_addr.s_addr = ip;
 
-	//地址重用，服务器程序停止后想立即重启，而新套接字依旧使用同一端口
+	/* 
+		地址重用，服务器程序停止后想立即重启，而新套接字可以马上使用同一端口(一般一个端口释放后两分钟
+		之后才可以被使用)
+	*/
 	if (setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, (char *) &n, sizeof(n)) == -1) {
 		close(fd);
 		return -1;
@@ -120,21 +123,27 @@ int listen_socket(unsigned int ip, int port, char *inf)
 	
 	/*
 	  允许此socket发送广播包,我的想法是,只要目的地址设成全255,这样默认就发送广播报了,这个选项作用
-	  体现在哪里呢？这是为了防止你误发广播包,即使的的目的IP是255.255.255.255,但你没有设置这个选项
-	  这个广播包也是发送不出去的
+	  体现在哪里呢？这是为了防止你误发广播包,虽然你的目的IP是255.255.255.255,但你没有设置这个选项
+	  发包时会返回EACCESS错误提醒
 	*/
 	if (setsockopt(fd, SOL_SOCKET, SO_BROADCAST, (char *) &n, sizeof(n)) == -1) {
 		close(fd);
 		return -1;
 	}
 
-	//将套接字绑定到特定的interface
+	/* 
+	  将套接字绑定到特定的interface，此socket只接收到此interface的报文，socket发送的
+	  报文也只从此interface出去
+	*/
 	strncpy(interface.ifr_ifrn.ifrn_name, inf, IFNAMSIZ);
 	if (setsockopt(fd, SOL_SOCKET, SO_BINDTODEVICE,(char *)&interface, sizeof(interface)) < 0) {
 		close(fd);
 		return -1;
 	}
 
+	/*
+	  绑定地址结构(ip and port)到socket
+	*/
 	if (bind(fd, (struct sockaddr *)&addr, sizeof(struct sockaddr)) == -1) {
 		close(fd);
 		return -1;
