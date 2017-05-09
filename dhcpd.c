@@ -156,6 +156,7 @@ int main(int argc, char *argv[])
 	signal(SIGUSR1, signal_handler);
 	signal(SIGTERM, signal_handler);
 
+	/* server_config.auto_time 是指定更新lease_file文件的周期 */
 	timeout_end = time(0) + server_config.auto_time;
 	while(1) { /* loop until universe collapses */
 

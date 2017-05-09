@@ -99,8 +99,7 @@ int listen_socket(unsigned int ip, int port, char *inf)
 
 	DEBUG(LOG_INFO, "Opening listen socket on 0x%08x:%d %s\n", ip, port, inf);
 	/* 
-		此套接字是IPPROTO_UDP类型，所以收到的包的内容就是UDP头部(不包含)以后的数据(也就是DHCP报文的内容)，在发送时
-		也只需要封装DHCP报文进行发送(传输层及以下的部分都是内核来做封装)
+		此套接字是IPPROTO_UDP类型，所以收到的包的内容就是UDP报文的payload数据
 	*/
 	if ((fd = socket(PF_INET, SOCK_DGRAM, IPPROTO_UDP)) < 0) {//PF --> protocol family
 		DEBUG(LOG_ERR, "socket call failed: %s", strerror(errno));
@@ -163,7 +162,8 @@ int raw_socket(int ifindex)
 		DEBUG(LOG_ERR, "socket call failed: %s", strerror(errno));
 		return -1;
 	}
-	
+
+	/* PACKET的套接字不能使用SO_BINDTODEVICE绑定到interface,所以只能呢个使用sockaddr_ll结构绑定interface */
 	sock.sll_family = AF_PACKET;
 	sock.sll_protocol = htons(ETH_P_IP);
 	sock.sll_ifindex = ifindex;

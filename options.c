@@ -16,7 +16,7 @@
 
 /* supported options are easily added here */
 struct dhcp_option options[] = {
-	/* name[10]	flags					code */
+	/* name[10]	flags					        code */
 	{"subnet",	OPTION_IP | OPTION_REQ,			0x01},
 	{"timezone",	OPTION_S32,				0x02},
 	{"router",	OPTION_IP | OPTION_LIST | OPTION_REQ,	0x03},
@@ -90,13 +90,16 @@ unsigned char *get_option(struct dhcpMessage *packet, int code)
 			LOG(LOG_WARNING, "bogus packet, option fields too long.");
 			return NULL;
 		}
+		/* 检查code值是否匹配 */
 		if (optionptr[i + OPT_CODE] == code) {
 			if (i + 1 + optionptr[i + OPT_LEN] >= length) {
 				LOG(LOG_WARNING, "bogus packet, option fields too long.");
 				return NULL;
 			}
 			return optionptr + i + 2;
-		}			
+		}		
+
+		/* 处理选项中特殊字段，DHCP_PADDING(跳过)， DHCP_END(结束)，DHCP_OPTION_OVER(自定义)*/	
 		switch (optionptr[i + OPT_CODE]) {
 		case DHCP_PADDING:
 			i++;
@@ -123,7 +126,7 @@ unsigned char *get_option(struct dhcpMessage *packet, int code)
 			} else done = 1;
 			break;
 		default:
-			i += optionptr[OPT_LEN + i] + 2;//指针操作指向下一个选项值的code字段
+			i += optionptr[OPT_LEN + i] + 2;//指针指向下一个选项值的code字段
 		}
 	}
 	return NULL;
@@ -131,6 +134,7 @@ unsigned char *get_option(struct dhcpMessage *packet, int code)
 
 
 /* return the position of the 'end' option (no bounds checking) */
+/* 返回从optionptr到'end'之间的步长 optionptr必须是packet->options*/
 int end_option(unsigned char *optionptr) 
 {
 	int i = 0;
@@ -145,6 +149,10 @@ int end_option(unsigned char *optionptr)
 
 /* add an option string to the options (an option string contains an option code,
  * length, then data) */
+/* 
+	添加一个选项到optionptr指向的options数组中，optionptr必须指向此数组的头部！
+	string指向的内容是用CLV格式存储的
+*/
 int add_option_string(unsigned char *optionptr, unsigned char *string)
 {
 	int end = end_option(optionptr);
@@ -156,12 +164,17 @@ int add_option_string(unsigned char *optionptr, unsigned char *string)
 	}
 	DEBUG(LOG_INFO, "adding option 0x%02x", string[OPT_CODE]);
 	memcpy(optionptr + end, string, string[OPT_LEN] + 2);
-	optionptr[end + string[OPT_LEN] + 2] = DHCP_END;
-	return string[OPT_LEN] + 2;
+	optionptr[end + string[OPT_LEN] + 2] = DHCP_END;//补充END选项结尾
+	return string[OPT_LEN] + 2;//返回所添加选项的整体长度
 }
 
 
 /* add a one to four byte option to a packet */
+/*
+	将一个4字节的数据和code值组织为CLV格式存储起来
+	得到的CLV结构数据交给add_option_string函数添加到options数组中
+*/
+
 int add_simple_option(unsigned char *optionptr, unsigned char code, u_int32_t data)
 {
 	char length = 0;

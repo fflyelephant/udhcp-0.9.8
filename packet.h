@@ -19,7 +19,7 @@ struct dhcpMessage {
 	u_int8_t chaddr[16];
 	u_int8_t sname[64];
 	u_int8_t file[128];
-	u_int32_t cookie;
+	u_int32_t cookie;		/* should be 0x63825363 */
 	u_int8_t options[308]; /* 312 - cookie */ 
 };
 

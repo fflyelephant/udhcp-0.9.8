@@ -61,7 +61,7 @@ int get_packet(struct dhcpMessage *packet, int fd)
 		return -1;
 	}
 
-	/* packet->cookie字段丢掉假冒的DHCP client报文 */
+	/* packet->cookie(Default:0x63825363)字段丢掉假冒的DHCP client报文 */
 	if (ntohl(packet->cookie) != DHCP_MAGIC) {
 		LOG(LOG_ERR, "received bogus message, ignoring");
 		return -2;
