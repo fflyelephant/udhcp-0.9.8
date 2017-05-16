@@ -132,7 +132,8 @@ int listen_socket(unsigned int ip, int port, char *inf)
 
 	/* 
 	  将套接字绑定到特定的interface，此socket只接收到此interface的报文，socket发送的
-	  报文也只从此interface出去
+	  报文也只从此interface出去(XX_PACKET套接字不支持SO_BINDTODEVICE选项需要使用struct sockaddr_ll结构的
+	  sll_ifindex成员来绑定interface)
 	*/
 	strncpy(interface.ifr_ifrn.ifrn_name, inf, IFNAMSIZ);
 	if (setsockopt(fd, SOL_SOCKET, SO_BINDTODEVICE,(char *)&interface, sizeof(interface)) < 0) {

@@ -123,6 +123,7 @@ int raw_packet(struct dhcpMessage *payload, u_int32_t source_ip, int source_port
 	struct sockaddr_ll dest;
 	struct udp_dhcp_packet packet;
 
+	/* 用于发送报文的原始UDP套接字 */
 	if ((fd = socket(PF_PACKET, SOCK_DGRAM, htons(ETH_P_IP))) < 0) {
 		DEBUG(LOG_ERR, "socket call failed: %s", strerror(errno));
 		return -1;
@@ -133,7 +134,7 @@ int raw_packet(struct dhcpMessage *payload, u_int32_t source_ip, int source_port
 	
 	dest.sll_family = AF_PACKET;
 	dest.sll_protocol = htons(ETH_P_IP);
-	dest.sll_ifindex = ifindex;
+	dest.sll_ifindex = ifindex;// XX_PACKET的套接字绑定interface需要用sockaddr_ll结构
 	dest.sll_halen = 6;
 	memcpy(dest.sll_addr, dest_arp, 6);
 	if (bind(fd, (struct sockaddr *)&dest, sizeof(struct sockaddr_ll)) < 0) {

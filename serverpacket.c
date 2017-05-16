@@ -193,6 +193,7 @@ int sendNAK(struct dhcpMessage *oldpacket)
 	init_packet(&packet, oldpacket, DHCPNAK);
 	
 	DEBUG(LOG_INFO, "sending NAK");
+	/* NAK报文是广播形式通知client */
 	return send_packet(&packet, 1);
 }
 
