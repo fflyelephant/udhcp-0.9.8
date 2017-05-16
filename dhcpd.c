@@ -240,11 +240,12 @@ int main(int argc, char *argv[])
 		}
 		
 		/* ADDME: look for a static lease */
+		/* 通过报文源MAC查找租赁链表中是否有租IP给过此MAC的client */
 		lease = find_lease_by_chaddr(packet.chaddr);
 
 		/* 根据协议给对应的报文回复动作 */
 		switch (state[0]) {
-		case DHCPDISCOVER:
+		case DHCPDISCOVER:	
 			DEBUG(LOG_INFO,"received DISCOVER");
 			
 			if (sendOffer(&packet) < 0) {
@@ -260,20 +261,25 @@ int main(int argc, char *argv[])
 			if (requested) memcpy(&requested_align, requested, 4);
 			if (server_id) memcpy(&server_id_align, server_id, 4);
 		
+			/* 客户端位于租赁链表中 */
 			if (lease) { /*ADDME: or static lease */
+				/* 有server IP值 */
 				if (server_id) {
 					/* SELECTING State */
 					DEBUG(LOG_INFO, "server_id = %08x", ntohl(server_id_align));
+					/* 是服务器IP 并且 请求的IP地址在租赁链表中 */
 					if (server_id_align == server_config.server && requested && 
 					    requested_align == lease->yiaddr) {
-						sendACK(&packet, lease->yiaddr);
+						sendACK(&packet, lease->yiaddr);// ACK
 					}
 				} else {
+					/* 没有服务器IP 但有请求IP*/
 					if (requested) {
 						/* INIT-REBOOT State */
+						/* 请求IP在租赁链表中 */
 						if (lease->yiaddr == requested_align)
-							sendACK(&packet, lease->yiaddr);
-						else sendNAK(&packet);
+							sendACK(&packet, lease->yiaddr);// ACK
+						else sendNAK(&packet); //NAK
 					} else {
 						/* RENEWING or REBINDING State */
 						if (lease->yiaddr == packet.ciaddr)
@@ -288,7 +294,7 @@ int main(int argc, char *argv[])
 			/* what to do if we have no record of the client */
 			} else if (server_id) {
 				/* SELECTING State */
-
+				/* 发给其他服务器的，不处理 */
 			} else if (requested) {
 				/* INIT-REBOOT State */
 				if ((lease = find_lease_by_yiaddr(requested_align))) {

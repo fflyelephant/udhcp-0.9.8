@@ -205,9 +205,14 @@ int sendACK(struct dhcpMessage *oldpacket, u_int32_t yiaddr)
 	u_int32_t lease_time_align = server_config.lease;
 	struct in_addr addr;
 
+	/* 先清空报文数据，封装部分头部信息 */
 	init_packet(&packet, oldpacket, DHCPACK);
 	packet.yiaddr = yiaddr;
 	
+	/* 
+		如果请求报文规定了DHCP_LEASE_TIME且 server_config.min_lease < DHCP_LEASE_TIME < erver_config.lease
+		则使用客户端要求的DHCP_LEASE_TIME，否则使用默认的server_config.lease
+	*/
 	if ((lease_time = get_option(oldpacket, DHCP_LEASE_TIME))) {
 		memcpy(&lease_time_align, lease_time, 4);
 		lease_time_align = ntohl(lease_time_align);
@@ -219,6 +224,7 @@ int sendACK(struct dhcpMessage *oldpacket, u_int32_t yiaddr)
 	
 	add_simple_option(packet.options, DHCP_LEASE_TIME, htonl(lease_time_align));
 	
+	/* 将配置文件中的opt选项添加到报文中(除了DHCP_LEASE_TIME的设置,因为前面已经设置过了) */
 	curr = server_config.options;
 	while (curr) {
 		if (curr->data[OPT_CODE] != DHCP_LEASE_TIME)
@@ -231,9 +237,11 @@ int sendACK(struct dhcpMessage *oldpacket, u_int32_t yiaddr)
 	addr.s_addr = packet.yiaddr;
 	LOG(LOG_INFO, "sending ACK to %s", inet_ntoa(addr));
 
+	/* 发送报文 */
 	if (send_packet(&packet, 0) < 0) 
 		return -1;
 
+	/* 将分配的IP更新到lease链表 */
 	add_lease(packet.chaddr, packet.yiaddr, lease_time_align);
 
 	return 0;
