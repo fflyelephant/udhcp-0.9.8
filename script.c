@@ -210,9 +210,11 @@ void run_script(struct dhcpMessage *packet, const char *name)
 	/* call script */
 	pid = fork();
 	if (pid) {
+		// father
 		waitpid(pid, NULL, 0);
 		return;
 	} else if (pid == 0) {
+		//child
 		envp = fill_envp(packet);
 		
 		/* close fd's? */

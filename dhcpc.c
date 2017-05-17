@@ -298,6 +298,7 @@ int main(int argc, char *argv[])
 	OPEN_LOG("udhcpc");
 	LOG(LOG_INFO, "udhcp client (v%s) started", VERSION);
 
+	/* 记录udhcpc pid */
 	pid_fd = pidfile_acquire(client_config.pidfile);
 	pidfile_write_release(pid_fd);
 
