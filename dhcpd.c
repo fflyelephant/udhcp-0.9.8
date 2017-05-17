@@ -119,7 +119,7 @@ int main(int argc, char *argv[])
 	else 
 		/* 配置文件中没有指定租赁时间就使用默认值LEASE_TIME(10天) */
 		server_config.lease = LEASE_TIME;
-	
+	/* max_leases默认是254条 */
 	leases = malloc(sizeof(struct dhcpOfferedAddr) * server_config.max_leases);
 	memset(leases, 0, sizeof(struct dhcpOfferedAddr) * server_config.max_leases);
 	read_leases(server_config.lease_file);

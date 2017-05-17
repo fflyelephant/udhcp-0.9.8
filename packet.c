@@ -197,7 +197,7 @@ int kernel_packet(struct dhcpMessage *payload, u_int32_t source_ip, int source_p
 
 	if (connect(fd, (struct sockaddr *)&client, sizeof(struct sockaddr)) == -1)
 		return -1;
-
+	// write在向socket写数据时是阻塞的
 	result = write(fd, payload, sizeof(struct dhcpMessage));
 	close(fd);
 	return result;

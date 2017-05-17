@@ -73,7 +73,7 @@ static int send_packet_to_client(struct dhcpMessage *payload, int force_broadcas
 static int send_packet(struct dhcpMessage *payload, int force_broadcast)
 {
 	int ret;
-
+	/* giaddr是跨网域发包的目的地址 */
 	if (payload->giaddr)
 		ret = send_packet_to_relay(payload);
 	else ret = send_packet_to_client(payload, force_broadcast);
